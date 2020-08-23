@@ -38,7 +38,7 @@ class PDFTextParserTestCase(unittest.TestCase):
                                               'clock_settime'],
                                 'lib_name': 'clockLib',
                                 'tbl_name': 'Table 5-4',
-                                'type': TableType.RoutinesFirst}
+                                'type': TableType.RoutinesFirst.value}
         table_info = pdf_p.process_table_at_index(idx)
         self.assertEqual(4, len(table_info['functions']))
         self.assertEqual(4, len(table_info['descriptions']))
@@ -69,7 +69,7 @@ class PDFTextParserTestCase(unittest.TestCase):
                                                'timer_cancel'],
                                  'lib_name': 'timerLib',
                                  'tbl_name': 'Table 5-5',
-                                 'type': TableType.Intermingled}
+                                 'type': TableType.Intermingled.value}
 
         table_info = pdf_p.process_table_at_index(idx)
         self.assertEqual(8, len(table_info['functions']))
@@ -98,7 +98,7 @@ class PDFTextParserTestCase(unittest.TestCase):
                                                          'taskDelay'],
                                            'lib_name': None,
                                            'tbl_name': 'Table 5-5',
-                                           'type': TableType.Intermingled}
+                                           'type': TableType.Intermingled.value}
 
         table_info = pdf_p.process_table_at_index(idx)
         self.assertEqual(6, len(table_info['functions']))
@@ -115,7 +115,7 @@ class PDFTextParserTestCase(unittest.TestCase):
         pdf_p.idx = idx
 
         table_type = pdf_p.table_type(idx)
-        self.assertEqual(TableType.RoutinesFirst, table_type)
+        self.assertEqual(TableType.RoutinesFirst.value, table_type)
 
         pdf_p.idx += 1
         idx = pdf_p.find_next_table_idx()
@@ -123,7 +123,7 @@ class PDFTextParserTestCase(unittest.TestCase):
         pdf_p.idx = idx
 
         table_type = pdf_p.table_type(idx)
-        self.assertEqual(TableType.Intermingled, table_type)
+        self.assertEqual(TableType.Intermingled.value, table_type)
 
     def test_determine_table_type_not_found(self):
         pdf_p = PDFTextParser()
@@ -185,7 +185,7 @@ Table 5-4
 
 POSIX Clock Routines 
 
-Routine
+Call
 
 clock_getres( )
 

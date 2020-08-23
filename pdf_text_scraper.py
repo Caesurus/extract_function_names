@@ -59,7 +59,7 @@ class PDFTextParser(object):
 
     def table_type(self, idx):
         for i in range(idx, idx + self.TABLE_TYPE_RANGE):
-            if self.text[i].startswith('Routine'):
+            if self.text[i].startswith('Routine') or self.text[i].startswith('Call'):
                 if self.text[i + 2] == 'Description':
                     self.idx = i + 2
                     return TableType.Intermingled.value
