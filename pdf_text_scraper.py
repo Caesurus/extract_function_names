@@ -22,7 +22,7 @@ class PDFTextParser(object):
 
         self.regex_libname = r'.*\s(?P<lib_name>\w+Lib)'
         self.regex_function = r'^(?P<function_name>\w+)\(\s*\)\s*(?P<description>.*)'
-        self.regex_page_number = r'^\d+$'
+        self.regex_page_number = r'^\d\d\d+$'
 
     def parse(self, text_chunk):
         self.text = text_chunk.split('\n')
@@ -33,7 +33,7 @@ class PDFTextParser(object):
         try:
             for i in range(self.idx, len(self.text)):
                 line = self.text[i]
-                if line.startswith('Table'):
+                if line.startswith('Table') and 1 == line.count('Table'):
                     return i
         except:
             print('boo')
@@ -170,7 +170,7 @@ if __name__ == '__main__':
                 if idx:
                     pdf_p.idx = idx
                     table_info = pdf_p.process_table_at_index(idx)
-                    if table_info['lib_name']:
+                    if table_info['type']:
                         tbls.append(table_info)
                 else:
                     break
