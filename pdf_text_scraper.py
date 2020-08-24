@@ -2,6 +2,7 @@
 import argparse
 import json
 import re
+from collections import OrderedDict
 from enum import Enum
 from pprint import pprint
 
@@ -157,7 +158,7 @@ if __name__ == '__main__':
     parser.add_argument('-o', '--output', help='json file to output to')
 
     args = parser.parse_args()
-    tbls=[]
+    library_dict = OrderedDict()
 
     for filename in args.files:
         with open(filename, 'r', encoding="ISO-8859-1") as f:
@@ -171,12 +172,21 @@ if __name__ == '__main__':
                     pdf_p.idx = idx
                     table_info = pdf_p.process_table_at_index(idx)
                     if table_info['type']:
-                        tbls.append(table_info)
+                        libName = table_info['lib_name']
+                        if libName is None:
+                            libName = 'VxWorks'
+
+                        if libName not in library_dict:
+                            library_dict[libName] = {'table_name': table_info['tbl_name'], 'description': '', 'functions': []}
+                        for i in range(len(table_info['functions'])):
+                            item = {'name': table_info['functions'][i], 'description': table_info['descriptions'][i]}
+                            library_dict[libName]['functions'].append(item)
+
                 else:
                     break
 
     if args.output:
         with open(args.output, 'w') as f:
-            f.write(json.dumps(tbls, sort_keys=True, indent=2))
+            f.write(json.dumps(library_dict, sort_keys=True, indent=2))
     else:
-        print(json.dumps(tbls, sort_keys=True, indent=2))
+        print(json.dumps(library_dict, sort_keys=True, indent=2))
