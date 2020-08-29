@@ -1,6 +1,5 @@
 import unittest
 
-
 from pdf_text_scraper import PDFTextParser, TableType
 
 
@@ -20,7 +19,7 @@ class PDFTextParserTestCase(unittest.TestCase):
         pdf_p.parse(example_text_table_1)
 
         idx = pdf_p.find_next_table_idx()
-        self.assertEqual(5, idx)
+        self.assertEqual(25, idx)
         pdf_p.idx = idx
 
         expected_first_table = {'descriptions': ['Get the clock resolution (CLOCK_REALTIME '
@@ -36,6 +35,7 @@ class PDFTextParserTestCase(unittest.TestCase):
                                               'clock_setres',
                                               'clock_gettime',
                                               'clock_settime'],
+                                'tbl_description': 'POSIX Clock Routines',
                                 'lib_name': 'clockLib',
                                 'tbl_name': 'Table 5-4',
                                 'type': TableType.RoutinesFirst.value}
@@ -43,10 +43,10 @@ class PDFTextParserTestCase(unittest.TestCase):
         self.assertEqual(4, len(table_info['functions']))
         self.assertEqual(4, len(table_info['descriptions']))
         self.assertEqual(expected_first_table, table_info)
-        self.assertEqual(33, pdf_p.idx)
+        self.assertEqual(53, pdf_p.idx)
 
         idx = pdf_p.find_next_table_idx()
-        self.assertEqual(63, idx)
+        self.assertEqual(83, idx)
         pdf_p.idx = idx
 
         expected_second_table = {'descriptions': ['Allocate a timer using the specified clock for a timing '
@@ -67,6 +67,7 @@ class PDFTextParserTestCase(unittest.TestCase):
                                                'timer_getoverrun',
                                                'timer_settime',
                                                'timer_cancel'],
+                                 'tbl_description': 'POSIX Timer Routines',
                                  'lib_name': 'timerLib',
                                  'tbl_name': 'Table 5-5',
                                  'type': TableType.Intermingled.value}
@@ -75,10 +76,10 @@ class PDFTextParserTestCase(unittest.TestCase):
         self.assertEqual(8, len(table_info['functions']))
         self.assertEqual(8, len(table_info['descriptions']))
         self.assertEqual(expected_second_table, table_info)
-        self.assertEqual(105, pdf_p.idx)
+        self.assertEqual(125, pdf_p.idx)
 
         idx = pdf_p.find_next_table_idx()
-        self.assertEqual(111, idx)
+        self.assertEqual(131, idx)
         pdf_p.idx = idx
 
         expected_second_table_continued = {'descriptions': ['Connect a user routine to the timer signal. '
@@ -96,6 +97,7 @@ class PDFTextParserTestCase(unittest.TestCase):
                                                          'sleep',
                                                          'alarm',
                                                          'taskDelay'],
+                                           'tbl_description': 'POSIX Timer Routines',
                                            'lib_name': None,
                                            'tbl_name': 'Table 5-5',
                                            'type': TableType.Intermingled.value}
@@ -104,14 +106,38 @@ class PDFTextParserTestCase(unittest.TestCase):
         self.assertEqual(6, len(table_info['functions']))
         self.assertEqual(6, len(table_info['descriptions']))
         self.assertEqual(expected_second_table_continued, table_info)
-        self.assertEqual(141, pdf_p.idx)
+        self.assertEqual(161, pdf_p.idx)
+
+    def test_determine_table_header(self):
+        pdf_p = PDFTextParser()
+        pdf_p.parse(example_text_table_1)
+
+        idx = pdf_p.find_next_table_idx()
+        self.assertEqual(25, idx)
+        pdf_p.idx = idx
+
+        table_type = pdf_p.table_type(idx)
+        self.assertEqual(TableType.RoutinesFirst.value, table_type)
+
+        table_name, table_description = pdf_p.get_table_name_and_description(idx)
+        self.assertEqual('Table 5-4', table_name)
+        self.assertEqual('POSIX Clock Routines', table_description)
+        pdf_p.idx += 1
+
+        idx = pdf_p.find_next_table_idx()
+        self.assertEqual(83, idx)
+        pdf_p.idx = idx
+
+        table_name, table_description = pdf_p.get_table_name_and_description(idx)
+        self.assertEqual('Table 5-5', table_name)
+        self.assertEqual('POSIX Timer Routines', table_description)
 
     def test_determine_table_type(self):
         pdf_p = PDFTextParser()
         pdf_p.parse(example_text_table_1)
 
         idx = pdf_p.find_next_table_idx()
-        self.assertEqual(5, idx)
+        self.assertEqual(25, idx)
         pdf_p.idx = idx
 
         table_type = pdf_p.table_type(idx)
@@ -119,7 +145,7 @@ class PDFTextParserTestCase(unittest.TestCase):
 
         pdf_p.idx += 1
         idx = pdf_p.find_next_table_idx()
-        self.assertEqual(63, idx)
+        self.assertEqual(83, idx)
         pdf_p.idx = idx
 
         table_type = pdf_p.table_type(idx)
@@ -149,11 +175,11 @@ class PDFTextParserTestCase(unittest.TestCase):
         pdf_p.parse(example_text_table_1)
 
         idx = pdf_p.find_next_table_idx()
-        self.assertEqual(5, idx)
+        self.assertEqual(25, idx)
         pdf_p.idx = idx + 1
 
         idx = pdf_p.find_next_table_idx()
-        self.assertEqual(63, idx)
+        self.assertEqual(83, idx)
 
     def test_parse_text(self):
         pdf_p = PDFTextParser()
@@ -176,7 +202,27 @@ class PDFTextParserTestCase(unittest.TestCase):
         self.assertTrue(isinstance(pdf_p, PDFTextParser))
 
 
-example_text_table_1 = """See Table 5-4 for a list of the POSIX clock routines. The obsolete VxWorks-specific 
+example_text_table_1 = """259
+
+VxWorks
+Kernel Programmer's Guide, 6.6 
+
+For information about thread CPU-time clocks, see the VxWorks Application 
+Programmer’s Guide: POSIX Facilities. 
+The real-time clock can be reset (but only from the kernel). The monotonic clock 
+cannot be reset, and provides the time that has elapsed since the system booted. 
+The real-time clock can be accessed with the POSIX clock and timer routines by 
+using the clock_id parameter CLOCK_REALTIME. A real-time clock can be reset at 
+run time with a call to clock_settime( ) from within the kernel (not from a process). 
+The monotonic clock can be accessed by calling clock_gettime( ) with a clock_id 
+parameter of CLOCK_MONOTONIC. A monotonic clock keeps track of the time 
+that has elapsed since system startup; that is, the value returned by 
+clock_gettime( ) is the amount of time (in seconds and nanoseconds) that has 
+passed since the system booted. A monotonic clock cannot be reset. Applications 
+can therefore rely on the fact that any measurement of a time interval that they 
+might make has not been falsified by a call to clock_settime( ). 
+Both CLOCK_REALTIME and CLOCK_MONOTONIC are defined in time.h. 
+See Table 5-4 for a list of the POSIX clock routines. The obsolete VxWorks-specific  
 POSIX extension clock_setres( ) is provided for backwards-compatibility 
 purposes. For more information about clock routines, see the API reference for 
 clockLib. 
@@ -446,7 +492,6 @@ components that are provided in addition to the native VxWorks APIs.
 
 256
 """
-
 
 if __name__ == '__main__':
     unittest.main()

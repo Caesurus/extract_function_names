@@ -4,7 +4,6 @@ import json
 import re
 from collections import OrderedDict
 from enum import Enum
-from pprint import pprint
 
 
 class TableType(Enum):
@@ -19,6 +18,7 @@ class PDFTextParser(object):
 
         self.PAGE_SIZE = 100
         self.TABLE_TYPE_RANGE = 10
+        self.TABLE_HEADING_RANGE = 30
         self.SEARCH_BACKWARD_RANGE = 6
 
         self.regex_libname = r'.*\s(?P<lib_name>\w+Lib)'
@@ -35,6 +35,8 @@ class PDFTextParser(object):
             for i in range(self.idx, len(self.text)):
                 line = self.text[i]
                 if line.startswith('Table') and 1 == line.count('Table'):
+                    if '.' in line:
+                        continue
                     return i
         except:
             print('boo')
@@ -55,7 +57,8 @@ class PDFTextParser(object):
         m = re.match(self.regex_function, line)
         if m:
             function_name = m.groupdict()['function_name']
-            description = m.groupdict()['description']
+            description = self.sanitize_string(m.groupdict()['description'])
+            print(description)
         return function_name, description
 
     def table_type(self, idx):
@@ -72,7 +75,8 @@ class PDFTextParser(object):
     def process_table_at_index(self, idx):
         self.idx = idx
         self.idx = self.find_next_table_idx()
-        table_info = {'tbl_name': self.text[self.idx]}
+        tbl_name, tbl_desc = self.get_table_name_and_description(self.idx)
+        table_info = {'tbl_name': tbl_name, 'tbl_description': tbl_desc}
 
         start = self.idx - self.SEARCH_BACKWARD_RANGE
         if start < 0:
@@ -151,6 +155,25 @@ class PDFTextParser(object):
                 break
         return i, description
 
+    def sanitize_string(self, input):
+        return input.encode('ascii', 'ignore').decode('iso-8859-1')
+
+    def get_table_name_and_description(self, idx):
+        regex = r'^(?P<tbl_name>Table\s+\d+.\d+)\s*?(?P<tbl_description>.*)'
+        line = self.text[idx]
+
+        m = re.match(regex, self.text[idx])
+        if m:
+            desc = m['tbl_description']
+            if desc == '' or desc is None:
+                desc = self.text[idx + 2]
+
+            desc = self.sanitize_string(desc)
+            desc = desc.replace('(contd)', '').strip()
+            return m['tbl_name'], desc
+
+        return None, None
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='parse text pdf output for symbols')
@@ -174,10 +197,12 @@ if __name__ == '__main__':
                     if table_info['type']:
                         libName = table_info['lib_name']
                         if libName is None:
-                            libName = 'VxWorks'
+                            libName = f'lib_at_{str(idx)}'
 
                         if libName not in library_dict:
-                            library_dict[libName] = {'table_name': table_info['tbl_name'], 'description': '', 'functions': []}
+                            library_dict[libName] = {'table_name': table_info['tbl_name'],
+                                                     'description': table_info['tbl_description'],
+                                                     'functions': []}
                         for i in range(len(table_info['functions'])):
                             item = {'name': table_info['functions'][i], 'description': table_info['descriptions'][i]}
                             library_dict[libName]['functions'].append(item)
