@@ -214,7 +214,8 @@ if __name__ == '__main__':
 
                         if libName is None and library_dict[tblName]['lib_name'] is None:
                             libName = f'lib_at_{str(idx)}'
-                            library_dict[tblName]['lib_name'] = libName
+
+                        library_dict[tblName]['lib_name'] = libName
 
                         for i in range(len(table_info['functions'])):
                             item = {'name': table_info['functions'][i], 'description': table_info['descriptions'][i]}
