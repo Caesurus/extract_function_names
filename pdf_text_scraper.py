@@ -210,12 +210,13 @@ if __name__ == '__main__':
                         if '' == library_dict[tblName]['description']:
                             library_dict[tblName]['description'] = table_info['tbl_description']
 
-                        libName = table_info['lib_name']
+                        if library_dict[tblName]['lib_name'] is None or 'lib_at' in library_dict[tblName]['lib_name']:
+                            libName = table_info['lib_name']
 
-                        if libName is None and library_dict[tblName]['lib_name'] is None:
-                            libName = f'lib_at_{str(idx)}'
+                            if libName is None:
+                                libName = f'lib_at_{str(idx)}'
 
-                        library_dict[tblName]['lib_name'] = libName
+                            library_dict[tblName]['lib_name'] = libName
 
                         for i in range(len(table_info['functions'])):
                             item = {'name': table_info['functions'][i], 'description': table_info['descriptions'][i]}
