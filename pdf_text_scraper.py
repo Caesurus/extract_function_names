@@ -4,6 +4,7 @@ import json
 import re
 from collections import OrderedDict
 from enum import Enum
+from pprint import pprint
 
 
 class TableType(Enum):
@@ -39,7 +40,7 @@ class PDFTextParser(object):
                         continue
                     return i
         except:
-            print('boo')
+            pass
         return None
 
     def search_libname_in_range(self, start, end):
@@ -58,7 +59,6 @@ class PDFTextParser(object):
         if m:
             function_name = m.groupdict()['function_name']
             description = self.sanitize_string(m.groupdict()['description'])
-            print(description)
         return function_name, description
 
     def table_type(self, idx):
@@ -155,11 +155,12 @@ class PDFTextParser(object):
                 break
         return i, description
 
-    def sanitize_string(self, input):
+    @staticmethod
+    def sanitize_string(input):
         return input.encode('ascii', 'ignore').decode('iso-8859-1')
 
     def get_table_name_and_description(self, idx):
-        regex = r'^(?P<tbl_name>Table\s+\d+.\d+)\s*?(?P<tbl_description>.*)'
+        regex = r'^(?P<tbl_name>Table\s+[\w+\d+]+.\d+)\s*?(?P<tbl_description>.*)'
         line = self.text[idx]
 
         m = re.match(regex, self.text[idx])
@@ -195,23 +196,39 @@ if __name__ == '__main__':
                     pdf_p.idx = idx
                     table_info = pdf_p.process_table_at_index(idx)
                     if table_info['type']:
-                        libName = table_info['lib_name']
-                        if libName is None:
-                            libName = f'lib_at_{str(idx)}'
+                        tblName = table_info['tbl_name']
+                        if tblName is None:
+                            tblName = 'UnKnown'
 
-                        if libName not in library_dict:
-                            library_dict[libName] = {'table_name': table_info['tbl_name'],
+                        if tblName not in library_dict:
+                            library_dict[tblName] = {'table_name': table_info['tbl_name'],
+                                                     'lib_name': None,
                                                      'description': table_info['tbl_description'],
                                                      'functions': []}
+
+                        # update if we don't have a description already
+                        if '' == library_dict[tblName]['description']:
+                            library_dict[tblName]['description'] = table_info['tbl_description']
+
+                        libName = table_info['lib_name']
+
+                        if libName is None and library_dict[tblName]['lib_name'] is None:
+                            libName = f'lib_at_{str(idx)}'
+                            library_dict[tblName]['lib_name'] = libName
+
                         for i in range(len(table_info['functions'])):
                             item = {'name': table_info['functions'][i], 'description': table_info['descriptions'][i]}
-                            library_dict[libName]['functions'].append(item)
+                            library_dict[tblName]['functions'].append(item)
 
                 else:
                     break
 
     if args.output:
         with open(args.output, 'w') as f:
+            #for i in library_dict:
+            #    pprint(library_dict[i])
+            #    print('-'*80)
+            #    print(json.dumps(library_dict[i], sort_keys=True, indent=2))
             f.write(json.dumps(library_dict, sort_keys=True, indent=2))
     else:
         print(json.dumps(library_dict, sort_keys=True, indent=2))
